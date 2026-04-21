@@ -1,0 +1,272 @@
+
+
+     Context
+
+     Service NSW needs a single-box search experience with < 100ms P95 latency, delivering both keyword autocomplete and direct Q&A before the user hits Enter. Data is aggregated (not owned), Azure AI Search is the
+      existing engine, and a High Frequency Search (HFS) list of the top 1,000 queries is available as an in-memory intercept layer. The Admin Key must never reach the frontend.
+
+     ---
+     Stack Decision
+
+     Edge Proxy Options (ranked by fit)
+
+     ┌──────────────────────────────────────┬─────────────────────┬──────────────────────┬──────────────────────────┬────────────────────────────┐
+     │                Option                │     Cold Start      │    Always-on Cost    │         Latency          │          Verdict           │
+     ├──────────────────────────────────────┼─────────────────────┼──────────────────────┼──────────────────────────┼────────────────────────────┤
+     │ Cloudflare Workers ⭐                │ ~0 ms (V8 isolates) │ $0 (pay-per-request) │ Edge PoP closest to user │ Recommended                │
+     ├──────────────────────────────────────┼─────────────────────┼──────────────────────┼──────────────────────────┼────────────────────────────┤
+     │ Azure Functions Premium              │ 0 ms (pre-warmed)   │ ~$150–250/month      │ Single Azure region      │ Good Azure-native option   │
+     ├──────────────────────────────────────┼─────────────────────┼──────────────────────┼──────────────────────────┼────────────────────────────┤
+     │ Azure Functions Consumption          │ 1–3 s               │ $0 (pay-per-request) │ Single Azure region      │ ❌ Violates 100 ms budget  │
+     ├──────────────────────────────────────┼─────────────────────┼──────────────────────┼──────────────────────────┼────────────────────────────┤
+     │ Azure Container Apps (scale-to-zero) │ 2–5 s               │ $0 idle              │ Single Azure region      │ ❌ Violates 100 ms budget  │
+     ├──────────────────────────────────────┼─────────────────────┼──────────────────────┼──────────────────────────┼────────────────────────────┤
+     │ Azure API Management + Functions     │ ~1 ms overhead      │ ~$250+/month         │ Single Azure region      │ Over-engineered; high cost │
+     └──────────────────────────────────────┴─────────────────────┴──────────────────────┴──────────────────────────┴────────────────────────────┘
+
+     Recommendation: Cloudflare Workers
+     - V8 isolates mean no container spin-up; cold start is effectively zero
+     - Runs at the edge PoP nearest the user (critical for Sydney-concentrated government traffic)
+     - Workers KV provides cheap persistent storage to warm the HFS Trie across deployments
+     - Node.js-compatible; fetch() to Azure AI Search works natively
+     - Limitation: Adds a non-Azure dependency; requires Cloudflare account management
+
+     Azure Functions Premium (if Azure-only required)
+     - Pre-warmed instances fully eliminate cold starts
+     - HFS Trie lives in module-level memory (persists across invocations within the same instance)
+     - Limitation: Always-on cost; single-region unless paired with Azure Front Door (~$35/month extra); more operational overhead
+
+     ┌──────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────┐
+     │  Other concerns  │                                             Decision                                              │
+     ├──────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+     │ HFS storage      │ In-process Trie (warm from Workers KV / function startup) — O(k) prefix lookup, no external cache │
+     ├──────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+     │ Response caching │ Workers KV / function-level Map (TTL 60 s) — covers repeated queries cheaply, no Redis required   │
+     ├──────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+     │ Search engine    │ Azure AI Search (existing) — fuzzy prefix for keywords; Semantic Answers for questions            │
+     └──────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+     ---
+     Smart Proxy Evaluation & Corrections
+
+     Phase 1 — HFS In-Memory Check ✓ (correct, with additions)
+
+     - Normalise query before lookup: lowercase, trim, collapse whitespace.
+     - Trie gives O(k) prefix lookup (k = query length), easily handles 1,000 entries.
+     - Addition: Skip Azure entirely if query is < 3 characters; return HFS prefix matches only.
+
+     Phase 2 — Intent Detection ✓ (correct, with refinements)
+
+     - Question heuristic: leading question words (how, what, where, when, why, can i, do i, is there, am i) or trailing ?.
+     - Correction: Add word-count threshold — queries > 4 words are treated as questions even without question words (conversational phrasing).
+     - This whole phase is a regex + word-count check, < 0.1 ms.
+
+     Phase 3 — Azure AI Search ⚠️ (corrections required)
+
+     - Keyword path: Azure Suggesters only do exact prefix match. Replace with search=*&queryType=full&$search={q}~1 (fuzzy, edit distance 1) for better recall at acceptable speed.
+     - Question path: Semantic Answers adds ~20–50 ms. This is acceptable if Azure responds within ~75 ms total.
+     - New: Circuit Breaker — if Azure does not respond within 80 ms, abort and return the best available HFS partial matches. Protects the SLA.
+     - New: Parallel execution — for ambiguous intent (no clear question/keyword signal), fire both paths concurrently and merge; take the first response that returns.
+
+     ---
+     Architecture Diagram (Mermaid.js)
+
+     flowchart TD
+         subgraph CLIENT["CLIENT"]
+             UI["Search Input\n(debounce 150 ms · min 3 chars)"]
+         end
+
+         subgraph EDGE["EDGE PROXY — Cloudflare Worker  /  Azure Function Premium"]
+             EC["Edge Response Cache\n[Workers KV · TTL 60 s · keyed on normalised query]"]
+             HFS["Phase 1 · HFS Trie\n[~1,000 entries · in-memory · O(k) · ~1 ms]"]
+             ID["Phase 2 · Intent Detector\n[question words + word-count heuristic · < 0.1 ms]"]
+             KW["Phase 3a · Keyword Path\nAzure Search — fuzzy prefix · edit-distance 1"]
+             QA["Phase 3b · Question Path\nAzure Search — Semantic Answers extractive"]
+             CB["Circuit Breaker\n[80 ms timeout → HFS partial fallback]"]
+             RF["Response Formatter\n[normalise · rank · cap at 8 results]"]
+         end
+
+         subgraph AZURE["AZURE AI SEARCH"]
+             IDX["Search Index\n[content fields + HFS score boosting]"]
+         end
+
+         subgraph INGEST["INGESTION  (background / async)"]
+             CMS["Drupal CMS"]
+             EXT["Other Sources\n(RDS · MongoDB · etc.)"]
+             ETL["ETL Pipeline\n(Azure Function / Logic App)"]
+             HFSRC["HFS Analytics\n(top-1,000 · daily refresh)"]
+         end
+
+         UI -->|"GET /suggest?q=… (HTTPS)"| EC
+         EC -->|"cache HIT → instant"| UI
+         EC -->|"cache MISS"| HFS
+         HFS -->|"HFS HIT  < 1 ms"| RF
+         HFS -->|"HFS MISS"| ID
+         ID -->|"keyword intent"| KW
+         ID -->|"question intent"| QA
+         ID -->|"ambiguous → parallel"| KW
+         ID -->|"ambiguous → parallel"| QA
+         KW -->|"fuzzy search query"| IDX
+         QA -->|"semantic answers query"| IDX
+         IDX -->|"results"| CB
+         CB -->|"within 80 ms"| RF
+         CB -->|"timeout → HFS fallback"| RF
+         RF --> EC
+         RF --> UI
+
+         CMS --> ETL
+         EXT --> ETL
+         ETL -->|"index documents"| IDX
+         HFSRC -->|"warm Worker KV / function memory on startup"| HFS
+
+     ---
+     Request Flow — Latency Budget
+
+     ┌────────────────────────────────────┬─────────────────────┐
+     │                Step                │       Target        │
+     ├────────────────────────────────────┼─────────────────────┤
+     │ Client debounce fires              │ 0 ms (starts clock) │
+     ├────────────────────────────────────┼─────────────────────┤
+     │ Edge cache hit                     │ < 5 ms total        │
+     ├────────────────────────────────────┼─────────────────────┤
+     │ HFS Trie lookup                    │ < 2 ms              │
+     ├────────────────────────────────────┼─────────────────────┤
+     │ Intent detection                   │ < 1 ms              │
+     ├────────────────────────────────────┼─────────────────────┤
+     │ Azure AI Search round-trip         │ < 70 ms             │
+     ├────────────────────────────────────┼─────────────────────┤
+     │ Response format + send             │ < 5 ms              │
+     ├────────────────────────────────────┼─────────────────────┤
+     │ P95 total (cache miss, Azure path) │ < 100 ms            │
+     └────────────────────────────────────┴─────────────────────┘
+
+     ---
+     Index Schema (summary — for later implementation)
+
+     - Fields: id, title, url, body_excerpt, content_type, hfs_boost_score, keywords[]
+     - Semantic configuration: title as title field, body_excerpt as content field
+     - Suggester: over title + keywords[]
+     - Scoring profile: boost hfs_boost_score to surface high-frequency content
+
+     ---
+     Verification (post-build)
+
+     1. Load test with k6: ramp to 500 RPS, assert P95 < 100 ms
+     2. Disable Azure (simulate timeout), confirm HFS fallback returns within 5 ms
+     3. Test question vs keyword intent routing with 20 representative queries
+     4. Confirm Admin Key is absent from all browser network requests
+     5. Check Workers KV / function memory is warmed on cold boot with HFS list
+
+⏺ Here is the proposed architecture.
+
+  ---
+  Edge Proxy Options
+
+  ┌──────────────────────────────────────┬─────────────────────┬────────────────────┬────────────────────────┐
+  │                Option                │     Cold Start      │   Always-on Cost   │        Verdict         │
+  ├──────────────────────────────────────┼─────────────────────┼────────────────────┼────────────────────────┤
+  │ Cloudflare Workers ⭐                │ ~0 ms (V8 isolates) │ $0 pay-per-request │ Recommended            │
+  ├──────────────────────────────────────┼─────────────────────┼────────────────────┼────────────────────────┤
+  │ Azure Functions Premium              │ 0 ms (pre-warmed)   │ ~$150–250/month    │ Good if Azure-only     │
+  ├──────────────────────────────────────┼─────────────────────┼────────────────────┼────────────────────────┤
+  │ Azure Functions Consumption          │ 1–3 s               │ $0 pay-per-request │ ❌ Violates 100 ms SLA │
+  ├──────────────────────────────────────┼─────────────────────┼────────────────────┼────────────────────────┤
+  │ Azure Container Apps (scale-to-zero) │ 2–5 s               │ $0 idle            │ ❌ Violates 100 ms SLA │
+  ├──────────────────────────────────────┼─────────────────────┼────────────────────┼────────────────────────┤
+  │ Azure API Management + Functions     │ ~1 ms overhead      │ ~$250+/month       │ Over-engineered        │
+  └──────────────────────────────────────┴─────────────────────┴────────────────────┴────────────────────────┘
+
+  Cloudflare Workers is the optimal fit: V8 isolates give genuinely zero cold starts, Workers KV stores the HFS list across deployments, and it runs at the edge PoP nearest Sydney users. The only trade-off is a
+  non-Azure dependency. If Azure-only is a hard constraint, use Functions Premium with Azure Front Door (~$35/month) for edge distribution.
+
+  ---
+  Smart Proxy — Corrections & Additions
+
+  ┌────────────────────────────┬──────────────────────────┬─────────────┬───────────────────────────────────────────────────────────────────────────────────────────────┐
+  │           Phase            │      Your Proposal       │   Verdict   │                                            Changes                                            │
+  ├────────────────────────────┼──────────────────────────┼─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Phase 1 — HFS              │ Trie / HashMap lookup    │ ✅ Correct  │ Add query normalisation (lowercase, trim); skip Azure entirely for < 3 chars                  │
+  ├────────────────────────────┼──────────────────────────┼─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Phase 2 — Intent Detection │ Question word heuristics │ ✅ Correct  │ Add word-count threshold: queries > 4 words treated as questions even without question words  │
+  ├────────────────────────────┼──────────────────────────┼─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Phase 3 — Keywords         │ Azure Suggesters         │ ⚠️ Partial  │ Suggesters do exact prefix only — replace with fuzzy search (queryType=full, edit-distance 1) │
+  ├────────────────────────────┼──────────────────────────┼─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Phase 3 — Questions        │ Semantic Answers         │ ✅ Correct  │ Acceptable; adds ~20–50 ms — within budget if Azure responds < 75 ms total                    │
+  ├────────────────────────────┼──────────────────────────┼─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Phase 3 — New              │ —                        │ ➕ Addition │ Circuit breaker at 80 ms: abort Azure call, return HFS partial matches as fallback            │
+  ├────────────────────────────┼──────────────────────────┼─────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Phase 3 — New              │ —                        │ ➕ Addition │ Parallel execution for ambiguous intent: fire both paths concurrently, take first result      │
+  └────────────────────────────┴──────────────────────────┴─────────────┴───────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  ---
+  Architecture Diagram
+
+  flowchart TD
+      subgraph CLIENT["CLIENT"]
+          UI["Search Input\n(debounce 150 ms · min 3 chars)"]
+      end
+
+      subgraph EDGE["EDGE PROXY — Cloudflare Worker  /  Azure Function Premium"]
+          EC["Edge Response Cache\n[Workers KV · TTL 60 s · keyed on normalised query]"]
+          HFS["Phase 1 · HFS Trie\n[~1,000 entries · in-memory · O(k) · ~1 ms]"]
+          ID["Phase 2 · Intent Detector\n[question words + word-count heuristic · < 0.1 ms]"]
+          KW["Phase 3a · Keyword Path\nAzure Search — fuzzy prefix · edit-distance 1"]
+          QA["Phase 3b · Question Path\nAzure Search — Semantic Answers extractive"]
+          CB["Circuit Breaker\n[80 ms timeout → HFS partial fallback]"]
+          RF["Response Formatter\n[normalise · rank · cap at 8 results]"]
+      end
+
+      subgraph AZURE["AZURE AI SEARCH"]
+          IDX["Search Index\n[content fields + HFS score boosting]"]
+      end
+
+      subgraph INGEST["INGESTION  (background / async)"]
+          CMS["Drupal CMS"]
+          EXT["Other Sources\n(RDS · MongoDB · etc.)"]
+          ETL["ETL Pipeline\n(Azure Function / Logic App)"]
+          HFSRC["HFS Analytics\n(top-1,000 · daily refresh)"]
+      end
+
+      UI -->|"GET /suggest?q=… (HTTPS)"| EC
+      EC -->|"cache HIT → instant"| UI
+      EC -->|"cache MISS"| HFS
+      HFS -->|"HFS HIT  < 1 ms"| RF
+      HFS -->|"HFS MISS"| ID
+      ID -->|"keyword intent"| KW
+      ID -->|"question intent"| QA
+      ID -->|"ambiguous → parallel"| KW
+      ID -->|"ambiguous → parallel"| QA
+      KW -->|"fuzzy search query"| IDX
+      QA -->|"semantic answers query"| IDX
+      IDX -->|"results"| CB
+      CB -->|"within 80 ms"| RF
+      CB -->|"timeout → HFS fallback"| RF
+      RF --> EC
+      RF --> UI
+
+      CMS --> ETL
+      EXT --> ETL
+      ETL -->|"index documents"| IDX
+      HFSRC -->|"warm Worker KV / function memory on startup"| HFS
+
+  ---
+  Latency Budget (cache-miss, Azure path)
+
+  ┌────────────────────────────┬───────────────────────────┐
+  │            Step            │          Budget           │
+  ├────────────────────────────┼───────────────────────────┤
+  │ Edge cache hit             │ < 5 ms total (stops here) │
+  ├────────────────────────────┼───────────────────────────┤
+  │ HFS Trie lookup            │ < 2 ms                    │
+  ├────────────────────────────┼───────────────────────────┤
+  │ Intent detection           │ < 1 ms                    │
+  ├────────────────────────────┼───────────────────────────┤
+  │ Azure AI Search round-trip │ < 70 ms                   │
+  ├────────────────────────────┼───────────────────────────┤
+  │ Response format + egress   │ < 5 ms                    │
+  ├────────────────────────────┼───────────────────────────┤
+  │ P95 total                  │ < 100 ms                  │
+  └────────────────────────────┴───────────────────────────┘
+
+  ---
+  When you're ready to proceed, the next steps are: (1) Azure Search index schema, (2) the Cloudflare Worker proxy code with HFS Trie and circuit breaker, and (3) the frontend debounce logic.

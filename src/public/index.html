@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Service NSW — Search</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f4f4f4;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #002664;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header .logo {
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    header .logo span {
+      color: #d7153a;
+    }
+
+    main {
+      max-width: 680px;
+      margin: 64px auto;
+      padding: 0 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+      color: #002664;
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 14px 48px 14px 16px;
+      font-size: 1rem;
+      border: 2px solid #c8c8c8;
+      border-radius: 6px;
+      outline: none;
+      background: #fff;
+      transition: border-color 0.15s;
+    }
+
+    .search-box:focus {
+      border-color: #002664;
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+      pointer-events: none;
+    }
+
+    .dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      overflow: hidden;
+      z-index: 100;
+    }
+
+    .dropdown.hidden { display: none; }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #888;
+      padding: 10px 16px 4px;
+    }
+
+    .suggestion {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .suggestion:hover,
+    .suggestion.active {
+      background: #f0f4ff;
+    }
+
+    .suggestion-icon {
+      flex-shrink: 0;
+      margin-top: 2px;
+      color: #002664;
+    }
+
+    .suggestion-text { flex: 1; }
+
+    .suggestion-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #1a1a1a;
+    }
+
+    .suggestion-meta {
+      font-size: 0.78rem;
+      color: #666;
+      margin-top: 1px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 3px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .badge-question { background: #fef3cd; color: #7a5800; }
+    .badge-keyword  { background: #d4edda; color: #155724; }
+
+    .no-results {
+      padding: 14px 16px;
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Service <span>NSW</span></div>
+</header>
+
+<main>
+  <h1>How can we help you?</h1>
+
+  <div class="search-wrap">
+    <input
+      id="search"
+      class="search-box"
+      type="text"
+      placeholder="Search services, e.g. renew licence, fine payment..."
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Search"
+      aria-autocomplete="list"
+      aria-controls="dropdown"
+    />
+    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <div id="dropdown" class="dropdown hidden" role="listbox"></div>
+  </div>
+</main>
+
+<script>
+  const input    = document.getElementById('search');
+  const dropdown = document.getElementById('dropdown');
+
+  let activeIndex = -1;
+  let debounceTimer = null;
+  let currentSuggestions = [];
+
+  // ── Icons ────────────────────────────────────────────────────────────────────
+
+  const icons = {
+    question: `<svg class="suggestion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    keyword:  `<svg class="suggestion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
+  };  
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+
+  function render(data) {
+    currentSuggestions = data.results ?? [];
+    activeIndex = -1;
+
+    if (!currentSuggestions.length) {
+      dropdown.innerHTML = `<p class="no-results">No suggestions found</p>`;
+      dropdown.classList.remove('hidden');
+      return;
+    }
+
+    const type = data.type;
+    const badgeClass = type === 'question' ? 'badge-question' : 'badge-keyword';
+    const badgeLabel = type === 'question' ? 'FAQ' : 'Service';
+
+    const items = currentSuggestions.map((r, i) => `
+      <div class="suggestion" role="option" data-index="${i}" tabindex="-1">
+        ${icons[type] ?? icons.keyword}
+        <div class="suggestion-text">
+          <div class="suggestion-title">
+            ${escapeHtml(r.title)}
+            <span class="badge ${badgeClass}">${badgeLabel}</span>
+          </div>
+          ${r.category ? `<div class="suggestion-meta">${escapeHtml(r.agency ?? '')}${r.agency && r.category ? ' · ' : ''}${escapeHtml(r.category)}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    dropdown.innerHTML = `<div class="section-label">${type === 'question' ? 'Questions' : 'Services'}</div>${items}`;
+    dropdown.classList.remove('hidden');
+
+    dropdown.querySelectorAll('.suggestion').forEach(el => {
+      el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        selectSuggestion(parseInt(el.dataset.index, 10));
+      });
+    });
+  }
+
+  function close() {
+    dropdown.classList.add('hidden');
+    activeIndex = -1;
+  }
+
+  function highlight(index) {
+    const items = dropdown.querySelectorAll('.suggestion');
+    items.forEach(el => el.classList.remove('active'));
+    if (index >= 0 && index < items.length) {
+      items[index].classList.add('active');
+    }
+  }
+
+  function selectSuggestion(index) {
+    const s = currentSuggestions[index];
+    if (!s) return;
+    input.value = s.title;
+    close();
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Fetch ────────────────────────────────────────────────────────────────────
+
+  async function fetchSuggestions(q) {
+    const res = await fetch(`/autocomplete?q=${encodeURIComponent(q)}&limit=8`);
+    if (!res.ok) return;
+    const data = await res.json();
+    render(data);
+  }
+
+  // ── Event listeners ──────────────────────────────────────────────────────────
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim();
+    clearTimeout(debounceTimer);
+
+    if (q.length < 2) { close(); return; }
+
+    debounceTimer = setTimeout(() => fetchSuggestions(q), 120);
+  });
+
+  input.addEventListener('keydown', e => {
+    const items = dropdown.querySelectorAll('.suggestion');
+    if (!items.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIndex = Math.min(activeIndex + 1, items.length - 1);
+      highlight(activeIndex);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIndex = Math.max(activeIndex - 1, -1);
+      highlight(activeIndex);
+    } else if (e.key === 'Enter') {
+      if (activeIndex >= 0) { e.preventDefault(); selectSuggestion(activeIndex); }
+    } else if (e.key === 'Escape') {
+      close();
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) close();
+  });
+</script>
+
+</body>
+</html>
