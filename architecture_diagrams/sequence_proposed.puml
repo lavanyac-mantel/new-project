@@ -1,0 +1,65 @@
+@startuml
+!theme plain
+skinparam shadowing false
+skinparam sequenceArrowThickness 1
+skinparam sequenceBoxBackgroundColor #F8F9FA
+skinparam participantBackgroundColor #EEF2FF
+skinparam participantBorderColor #6366F1
+skinparam actorBackgroundColor #EEF2FF
+skinparam sequenceDividerBackgroundColor #E0E7FF
+skinparam noteBorderColor #D97706
+skinparam noteBackgroundColor #FEF3C7
+
+title Proposed Architecture — Sequence Diagram
+
+== Data Pipeline (Offline) ==
+
+participant "data/ folder" as data
+participant "Rule-based\nExtractor" as rules
+participant "LLM\n(GPT-4o-mini)" as llm
+participant "Normalise +\nDeduplicate" as dedup
+participant "Azure Blob" as blob
+participant "search-suggestions-\nindex" as suggestIdx
+participant "CF App\n(Node.js)" as app
+
+data -> rules       : markdown files
+rules -> dedup      : keywords[]
+
+data -> llm         : headings only
+llm -> dedup        : questions[]
+
+dedup -> blob       : upload suggestions.json
+dedup -> suggestIdx : upsert records
+
+note over blob      : single source of truth
+
+== Hot-Reload ==
+
+blob -> app         : POST /reload\n(ingestor notifies)
+app -> blob         : GET suggestions.json\n(If-None-Match ETag)
+blob -> app         : 200 OK — new content
+app -> app          : swap MiniSearch index atomically
+
+note over app       : setInterval 30 min\nas safety net poll
+
+== Query Path (Real-time) ==
+
+actor User
+participant "Service API" as api
+participant "MiniSearch\n(Tier 0)" as mini
+
+User -> api         : GET /suggestions?q=renew
+
+api -> mini         : lookup
+
+alt cache hit
+  mini -> api       : suggestions[]
+  api -> User       : suggestions[]  <1ms
+else cache miss
+  mini -> api       : no results
+  api -> suggestIdx : query prefix match
+  suggestIdx -> api : suggestions[]
+  api -> User       : suggestions[]  <100ms
+end
+
+@enduml

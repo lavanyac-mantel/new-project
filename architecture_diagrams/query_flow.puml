@@ -1,0 +1,39 @@
+@startuml
+!theme plain
+skinparam shadowing false
+skinparam defaultFontSize 12
+skinparam arrowColor #444444
+skinparam componentBackgroundColor #EEF2FF
+skinparam componentBorderColor #6366F1
+skinparam databaseBackgroundColor #FEF3C7
+skinparam databaseBorderColor #D97706
+skinparam packageBackgroundColor #F8F9FA
+skinparam packageBorderColor #CCCCCC
+skinparam linetype ortho
+
+title Service NSW — Autocomplete Query Flow
+
+actor "User" as user
+
+package "Service NSW App" {
+  [Search UI] as ui
+}
+
+package "Service API (Node.js CF)" {
+  [GET /suggestions] as api
+  [MiniSearch\n(in-memory)] as mini #D1FAE5
+  [Fallback Handler] as fallback
+}
+
+database "search-suggestions-index\n(Azure AI Search)" as suggestIdx #FEF3C7
+
+user     -down-> ui
+ui       -down-> api
+api      -down-> mini      : tier 0
+mini     -down-> fallback  : miss
+fallback -down-> suggestIdx : tier 1
+suggestIdx -up-> fallback
+fallback -up-> api
+api      -up-> ui          : suggestions[]
+
+@enduml

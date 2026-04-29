@@ -1,0 +1,68 @@
+@startuml
+!theme plain
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam arrowColor #444444
+skinparam packageBackgroundColor #F8F9FA
+skinparam packageBorderColor #CCCCCC
+skinparam componentBackgroundColor #EEF2FF
+skinparam componentBorderColor #6366F1
+skinparam databaseBackgroundColor #FEF3C7
+skinparam databaseBorderColor #D97706
+skinparam linetype ortho
+
+title NSW Government Search — Data Pipeline
+
+[NSW Government Websites] as src
+
+package "Ingestor" {
+  [Fetch & Convert] as fetch
+  database "data/ folder" as datafolder
+
+  package "Primary Pipeline" {
+    [Dynamic Chunker] as chunker
+  }
+
+  package "Suggestions Pipeline" {
+    together {
+      [Rule-based Extraction] as optA #FFF7ED
+      [LLM Extraction] as optB #FDF2F8
+    }
+    [Normalise + Deduplicate] as dedup
+  }
+}
+
+database "search-index" as primary #FEF3C7
+database "search-suggestions-index" as suggestIdx #FEF3C7
+database "suggestions.json\n(Azure Blob)" as blob #DBEAFE
+
+package "Node.js CF App" {
+  [init() on boot] as boot
+  together {
+    [setInterval poll] as poll
+    [POST /reload] as reload
+  }
+  [MiniSearch] as mini #D1FAE5
+  [/suggest  /autocomplete] as api
+}
+
+src        --> fetch
+fetch      --> datafolder
+datafolder --> chunker
+chunker    --> primary
+
+datafolder -[#D97706]-> optA
+datafolder -[#9333EA]-> optB
+optA       -[#D97706]-> dedup
+optB       -[#9333EA]-> dedup
+dedup      --> blob
+dedup      --> suggestIdx
+
+blob  --> boot
+boot  --> mini
+poll  --> mini
+reload --> mini
+mini  --> api
+blob  ..> reload : notify
+
+@enduml
