@@ -13,19 +13,18 @@ skinparam linetype ortho
 
 title Service NSW — Current POC
 
-package "Approach B — Azure Suggester" #FFF7ED {
+package "Tier 1 — Azure Suggester" #FFF7ED {
   database "search-index\n(Azure AI Search)" as primary #FEF3C7
   [Built-in Suggester] as suggester
   primary -down-> suggester
 }
 
-package "Approach A — OpenAI Pipeline" {
+package "Tier 0 — OpenAI Pipeline" {
   [Extract Titles & Sections] as extract
   [OpenAI Model] as llm
   [Ingest] as ingest
 }
 
-database "search-suggestions-index\n(Azure AI Search)" as suggestIdx #FEF3C7
 [MiniSearch\n(in-memory)] as mini #D1FAE5
 
 actor "User" as user
@@ -39,13 +38,11 @@ extract -down-> llm
 llm     -down-> ingest
 ingest  -down-> mini
 
-user       -down-> api
-api        -down-> mini
-api        -down-> suggestIdx
-api        -down-> suggester
-suggestIdx -up-> api
-mini       -up-> api
-suggester  -up-> api
-api        -up-> user
+user      -down-> api
+api       -down-> mini
+api       -down-> suggester
+mini      -up-> api
+suggester -up-> api
+api       -up-> user
 
 @enduml
