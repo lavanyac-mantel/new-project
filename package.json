@@ -1,12 +1,12 @@
 {
   "name": "new-project",
   "version": "1.0.0",
-  "main": "src/index.js",
+  "main": "poc/backend/index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
-    "demo": "node src/index.js",
-    "bench": "node src/benchmark.js"
+    "start": "node poc/backend/server.js",
+    "demo": "node poc/backend/index.js",
+    "bench": "node poc/backend/benchmark.js"
   },
   "keywords": [],
   "author": "",
