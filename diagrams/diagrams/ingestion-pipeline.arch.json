@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "title": "Search Capability — Ingestion Pipeline",
+  "type": "engineering-diagram",
+  "source": "generated",
+  "profile": "engineering-review",
+  "theme": "tech-blue",
+  "layout": "vertical",
+  "counts": {
+    "nodes": 9,
+    "edges": 11,
+    "modules": 6
+  },
+  "nodes": [
+    {
+      "id": "markdown_files",
+      "label": "Markdown Files\n(title + section + body)",
+      "type": "document",
+      "module": "input",
+      "size": "large"
+    },
+    {
+      "id": "chunker",
+      "label": "Section Chunker\n(title + section + body per chunk)",
+      "type": "process",
+      "module": "chunking",
+      "size": "xl"
+    },
+    {
+      "id": "structural_keywords",
+      "label": "Structural Extraction\n(titles + section headers)",
+      "type": "process",
+      "module": "keyword_extraction",
+      "size": "large"
+    },
+    {
+      "id": "azure_lang",
+      "label": "Option A\nAzure AI Language\n(key phrases from body)",
+      "type": "service",
+      "module": "keyword_extraction",
+      "size": "large"
+    },
+    {
+      "id": "llm_keywords",
+      "label": "Option B\nLLM Keyword Extraction\n(via question gen prompt)",
+      "type": "service",
+      "module": "keyword_extraction",
+      "size": "large"
+    },
+    {
+      "id": "keyword_merge",
+      "label": "Merge Keywords",
+      "type": "process",
+      "module": "keyword_extraction",
+      "size": "medium"
+    },
+    {
+      "id": "azure_oai_questions",
+      "label": "Azure OpenAI\nGPT-4o\nQuestion Generation",
+      "type": "service",
+      "module": "question_generation",
+      "size": "large"
+    },
+    {
+      "id": "azure_oai_embed",
+      "label": "Azure OpenAI\nEmbedding Generation\n(text-embedding-3-small)",
+      "type": "service",
+      "module": "embedding",
+      "size": "large"
+    },
+    {
+      "id": "data_source",
+      "label": "Data Source\n{ id, text, type, embedding }",
+      "type": "database",
+      "module": "data_store",
+      "size": "large"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "markdown_files",
+      "to": "chunker",
+      "type": "primary"
+    },
+    {
+      "id": "edge-2",
+      "from": "chunker",
+      "to": "structural_keywords",
+      "type": "primary",
+      "label": "titles + headers"
+    },
+    {
+      "id": "edge-3",
+      "from": "chunker",
+      "to": "azure_lang",
+      "type": "optional",
+      "label": "Option A: body text"
+    },
+    {
+      "id": "edge-4",
+      "from": "chunker",
+      "to": "llm_keywords",
+      "type": "optional",
+      "label": "Option B: body text"
+    },
+    {
+      "id": "edge-5",
+      "from": "chunker",
+      "to": "azure_oai_questions",
+      "type": "primary",
+      "label": "title + section + body"
+    },
+    {
+      "id": "edge-6",
+      "from": "structural_keywords",
+      "to": "keyword_merge",
+      "type": "primary"
+    },
+    {
+      "id": "edge-7",
+      "from": "azure_lang",
+      "to": "keyword_merge",
+      "type": "optional"
+    },
+    {
+      "id": "edge-8",
+      "from": "llm_keywords",
+      "to": "keyword_merge",
+      "type": "optional"
+    },
+    {
+      "id": "edge-9",
+      "from": "keyword_merge",
+      "to": "azure_oai_embed",
+      "type": "primary",
+      "label": "keywords"
+    },
+    {
+      "id": "edge-10",
+      "from": "azure_oai_questions",
+      "to": "azure_oai_embed",
+      "type": "primary",
+      "label": "questions"
+    },
+    {
+      "id": "edge-11",
+      "from": "azure_oai_embed",
+      "to": "data_source",
+      "type": "data",
+      "label": "{ text, type, embedding }"
+    }
+  ],
+  "modules": [
+    {
+      "id": "input",
+      "label": "Input"
+    },
+    {
+      "id": "chunking",
+      "label": "Chunking"
+    },
+    {
+      "id": "keyword_extraction",
+      "label": "Keyword Extraction"
+    },
+    {
+      "id": "question_generation",
+      "label": "Question Generation"
+    },
+    {
+      "id": "embedding",
+      "label": "Embedding"
+    },
+    {
+      "id": "data_store",
+      "label": "Data Store"
+    }
+  ]
+}

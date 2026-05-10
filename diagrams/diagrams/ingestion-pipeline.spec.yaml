@@ -1,0 +1,155 @@
+meta:
+  theme: tech-blue
+  profile: engineering-review
+  layout: vertical
+  canvas: auto
+  routing: orthogonal
+  title: Search Capability — Ingestion Pipeline
+  description: Python pipeline for processing markdown files into the suggestions index
+modules:
+  - id: input
+    label: Input
+  - id: chunking
+    label: Chunking
+  - id: keyword_extraction
+    label: Keyword Extraction
+  - id: question_generation
+    label: Question Generation
+  - id: embedding
+    label: Embedding
+  - id: data_store
+    label: Data Store
+nodes:
+  - id: markdown_files
+    label: |-
+      Markdown Files
+      (title + section + body)
+    type: document
+    module: input
+    size: large
+    position:
+      x: 320
+      'y': 40
+  - id: chunker
+    label: |-
+      Section Chunker
+      (title + section + body per chunk)
+    type: process
+    module: chunking
+    size: xl
+    position:
+      x: 280
+      'y': 200
+  - id: structural_keywords
+    label: |-
+      Structural Extraction
+      (titles + section headers)
+    type: process
+    module: keyword_extraction
+    size: large
+    position:
+      x: 40
+      'y': 400
+  - id: azure_lang
+    label: |-
+      Option A
+      Azure AI Language
+      (key phrases from body)
+    type: service
+    module: keyword_extraction
+    size: large
+    position:
+      x: 40
+      'y': 540
+  - id: llm_keywords
+    label: |-
+      Option B
+      LLM Keyword Extraction
+      (via question gen prompt)
+    type: service
+    module: keyword_extraction
+    size: large
+    position:
+      x: 40
+      'y': 680
+  - id: keyword_merge
+    label: Merge Keywords
+    type: process
+    module: keyword_extraction
+    size: medium
+    position:
+      x: 80
+      'y': 820
+  - id: azure_oai_questions
+    label: |-
+      Azure OpenAI
+      GPT-4o
+      Question Generation
+    type: service
+    module: question_generation
+    size: large
+    position:
+      x: 520
+      'y': 540
+  - id: azure_oai_embed
+    label: |-
+      Azure OpenAI
+      Embedding Generation
+      (text-embedding-3-small)
+    type: service
+    module: embedding
+    size: large
+    position:
+      x: 300
+      'y': 980
+  - id: data_source
+    label: |-
+      Data Source
+      { id, text, type, embedding }
+    type: database
+    module: data_store
+    size: large
+    position:
+      x: 300
+      'y': 1140
+edges:
+  - from: markdown_files
+    to: chunker
+    type: primary
+  - from: chunker
+    to: structural_keywords
+    type: primary
+    label: titles + headers
+  - from: chunker
+    to: azure_lang
+    type: optional
+    label: 'Option A: body text'
+  - from: chunker
+    to: llm_keywords
+    type: optional
+    label: 'Option B: body text'
+  - from: chunker
+    to: azure_oai_questions
+    type: primary
+    label: title + section + body
+  - from: structural_keywords
+    to: keyword_merge
+    type: primary
+  - from: azure_lang
+    to: keyword_merge
+    type: optional
+  - from: llm_keywords
+    to: keyword_merge
+    type: optional
+  - from: keyword_merge
+    to: azure_oai_embed
+    type: primary
+    label: keywords
+  - from: azure_oai_questions
+    to: azure_oai_embed
+    type: primary
+    label: questions
+  - from: azure_oai_embed
+    to: data_source
+    type: data
+    label: '{ text, type, embedding }'

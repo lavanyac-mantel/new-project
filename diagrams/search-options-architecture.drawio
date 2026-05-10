@@ -1,0 +1,347 @@
+<mxfile host="app.diagrams.net" modified="2026-05-10" version="21.0.0" type="device">
+
+  <!-- ============================================================
+       Option A — MiniSearch (In-Process)
+       ============================================================ -->
+  <diagram name="A — MiniSearch" id="page-a">
+    <mxGraphModel dx="1150" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- TITLE -->
+        <mxCell id="a-title" value="Option A — MiniSearch (In-Process)" style="text;html=1;strokeColor=none;fillColor=#1B3A6B;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=17;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1000" height="58" as="geometry"/>
+        </mxCell>
+
+        <!-- CLIENT ZONE -->
+        <mxCell id="a-client-zone" value="CLIENT" style="text;html=1;strokeColor=#A0AEC0;fillColor=#F0F4F8;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#4A5568;" vertex="1" parent="1">
+          <mxGeometry x="20" y="68" width="960" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-browser" value="Browser" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3182CE;strokeWidth=1.5;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1A365D;" vertex="1" parent="1">
+          <mxGeometry x="400" y="84" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- APP ZONE -->
+        <mxCell id="a-app-zone" value="APPLICATION  —  App Service (Cloud Foundry)" style="text;html=1;strokeColor=#9AE6B4;fillColor=#F0FDF4;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#276749;" vertex="1" parent="1">
+          <mxGeometry x="20" y="163" width="960" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-app-service" value="App Service" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3182CE;strokeWidth=1.5;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1A365D;" vertex="1" parent="1">
+          <mxGeometry x="400" y="179" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- TIER 1 ZONE -->
+        <mxCell id="a-tier1-zone" value="TIER 1  —  Keyword and Question Search" style="text;html=1;strokeColor=#D6BCFA;fillColor=#FAF5FF;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#553C9A;" vertex="1" parent="1">
+          <mxGeometry x="20" y="258" width="960" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-minisearch" value="MiniSearch — in-process JS library&#xa;~1–5 ms  ·  No network call  ·  No external service" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#6B46C1;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#322659;" vertex="1" parent="1">
+          <mxGeometry x="325" y="274" width="350" height="53" as="geometry"/>
+        </mxCell>
+
+        <!-- DECISION -->
+        <mxCell id="a-decision" value="Results Meet Threshold?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEFCE8;strokeColor=#92400E;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#451A03;" vertex="1" parent="1">
+          <mxGeometry x="420" y="370" width="160" height="68" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-return-fast" value="Return Results" style="rounded=1;arcSize=10;fillColor=#F0FFF4;strokeColor=#276749;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontStyle=1;fontColor=#1C4532;" vertex="1" parent="1">
+          <mxGeometry x="700" y="379" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- TIER 2 ZONE -->
+        <mxCell id="a-tier2-zone" value="TIER 2  —  Semantic Fallback (Azure)" style="text;html=1;strokeColor=#FBD38D;fillColor=#FFFBF0;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#744210;" vertex="1" parent="1">
+          <mxGeometry x="20" y="464" width="960" height="175" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-openai" value="Azure OpenAI — Generate Embedding&#xa;~100 ms" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#C05621;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#7B341E;" vertex="1" parent="1">
+          <mxGeometry x="325" y="484" width="350" height="53" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-ai-search" value="Azure AI Search — Vector KNN&#xa;~150–200 ms total end-to-end" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#C05621;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#7B341E;" vertex="1" parent="1">
+          <mxGeometry x="325" y="567" width="350" height="53" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-return-slow" value="Return Results" style="rounded=1;arcSize=10;fillColor=#F0FFF4;strokeColor=#276749;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#1C4532;" vertex="1" parent="1">
+          <mxGeometry x="700" y="576" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- STATS BAR -->
+        <mxCell id="a-stats" value="Tier 1: ~1–5 ms  ·  Tier 2: ~150–200 ms  ·  Additional Infrastructure: None  ·  Complexity: Low  ·  Recommendation: Preferred" style="text;html=1;strokeColor=#E2E8F0;fillColor=#F7FAFC;align=center;verticalAlign=middle;rounded=1;arcSize=2;fontFamily=Helvetica;fontSize=11;fontColor=#4A5568;" vertex="1" parent="1">
+          <mxGeometry x="0" y="656" width="1000" height="46" as="geometry"/>
+        </mxCell>
+
+        <!-- EDGES -->
+        <mxCell id="a-e1" value="POST /suggestions  (300 ms debounce)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;fontFamily=Helvetica;fontSize=9;fontStyle=2;align=right;" edge="1" source="a-browser" target="a-app-service" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="a-app-service" target="a-minisearch" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="a-minisearch" target="a-decision" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-e4" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#276749;strokeWidth=2;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#276749;" edge="1" source="a-decision" target="a-return-fast" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-e5" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#C05621;strokeWidth=1.5;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#C05621;" edge="1" source="a-decision" target="a-openai" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="a-openai" target="a-ai-search" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a-e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="a-ai-search" target="a-return-slow" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <!-- ============================================================
+       Option B — RediSearch
+       ============================================================ -->
+  <diagram name="B — RediSearch" id="page-b">
+    <mxGraphModel dx="1150" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- TITLE -->
+        <mxCell id="b-title" value="Option B — RediSearch (Redis Stack)" style="text;html=1;strokeColor=none;fillColor=#1B3A6B;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=17;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1000" height="58" as="geometry"/>
+        </mxCell>
+
+        <!-- CLIENT ZONE -->
+        <mxCell id="b-client-zone" value="CLIENT" style="text;html=1;strokeColor=#A0AEC0;fillColor=#F0F4F8;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#4A5568;" vertex="1" parent="1">
+          <mxGeometry x="20" y="68" width="960" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-browser" value="Browser" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3182CE;strokeWidth=1.5;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1A365D;" vertex="1" parent="1">
+          <mxGeometry x="400" y="84" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- APP ZONE -->
+        <mxCell id="b-app-zone" value="APPLICATION  —  App Service (Cloud Foundry)" style="text;html=1;strokeColor=#9AE6B4;fillColor=#F0FDF4;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#276749;" vertex="1" parent="1">
+          <mxGeometry x="20" y="163" width="960" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-app-service" value="App Service" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3182CE;strokeWidth=1.5;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1A365D;" vertex="1" parent="1">
+          <mxGeometry x="400" y="179" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- TIER 1 ZONE -->
+        <mxCell id="b-tier1-zone" value="TIER 1  —  Keyword and Question Search" style="text;html=1;strokeColor=#D6BCFA;fillColor=#FAF5FF;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#553C9A;" vertex="1" parent="1">
+          <mxGeometry x="20" y="258" width="960" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-redis-search" value="Redis Stack — FT.SUGGET (prefix and fuzzy match)&#xa;~1–10 ms  ·  Shared service  ·  Network call within environment" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#6B46C1;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#322659;" vertex="1" parent="1">
+          <mxGeometry x="325" y="274" width="350" height="53" as="geometry"/>
+        </mxCell>
+
+        <!-- DECISION -->
+        <mxCell id="b-decision" value="Results Meet Threshold?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEFCE8;strokeColor=#92400E;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#451A03;" vertex="1" parent="1">
+          <mxGeometry x="420" y="370" width="160" height="68" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-return-fast" value="Return Results" style="rounded=1;arcSize=10;fillColor=#F0FFF4;strokeColor=#276749;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontStyle=1;fontColor=#1C4532;" vertex="1" parent="1">
+          <mxGeometry x="700" y="379" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- TIER 2 ZONE -->
+        <mxCell id="b-tier2-zone" value="TIER 2  —  Semantic Fallback (Azure and Redis)" style="text;html=1;strokeColor=#FBD38D;fillColor=#FFFBF0;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#744210;" vertex="1" parent="1">
+          <mxGeometry x="20" y="464" width="960" height="175" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-openai" value="Azure OpenAI — Generate Embedding&#xa;~100 ms" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#C05621;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#7B341E;" vertex="1" parent="1">
+          <mxGeometry x="325" y="484" width="350" height="53" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-redis-knn" value="Redis Stack — KNN Vector Query&#xa;~60–120 ms total end-to-end" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#C05621;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#7B341E;" vertex="1" parent="1">
+          <mxGeometry x="325" y="567" width="350" height="53" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-return-slow" value="Return Results" style="rounded=1;arcSize=10;fillColor=#F0FFF4;strokeColor=#276749;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#1C4532;" vertex="1" parent="1">
+          <mxGeometry x="700" y="576" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- STATS BAR -->
+        <mxCell id="b-stats" value="Tier 1: ~1–10 ms  ·  Tier 2: ~60–120 ms  ·  Additional Infrastructure: Redis Stack (shared)  ·  Complexity: Medium" style="text;html=1;strokeColor=#E2E8F0;fillColor=#F7FAFC;align=center;verticalAlign=middle;rounded=1;arcSize=2;fontFamily=Helvetica;fontSize=11;fontColor=#4A5568;" vertex="1" parent="1">
+          <mxGeometry x="0" y="656" width="1000" height="46" as="geometry"/>
+        </mxCell>
+
+        <!-- EDGES -->
+        <mxCell id="b-e1" value="POST /suggestions  (300 ms debounce)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;fontFamily=Helvetica;fontSize=9;fontStyle=2;align=right;" edge="1" source="b-browser" target="b-app-service" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="b-app-service" target="b-redis-search" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="b-redis-search" target="b-decision" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-e4" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#276749;strokeWidth=2;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#276749;" edge="1" source="b-decision" target="b-return-fast" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-e5" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#C05621;strokeWidth=1.5;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#C05621;" edge="1" source="b-decision" target="b-openai" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="b-openai" target="b-redis-knn" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="b-e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="b-redis-knn" target="b-return-slow" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <!-- ============================================================
+       Option C — Azure AI Search
+       ============================================================ -->
+  <diagram name="C — Azure AI Search" id="page-c">
+    <mxGraphModel dx="1150" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- TITLE -->
+        <mxCell id="c-title" value="Option C — Azure AI Search" style="text;html=1;strokeColor=none;fillColor=#1B3A6B;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=17;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1000" height="58" as="geometry"/>
+        </mxCell>
+
+        <!-- CLIENT ZONE -->
+        <mxCell id="c-client-zone" value="CLIENT" style="text;html=1;strokeColor=#A0AEC0;fillColor=#F0F4F8;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#4A5568;" vertex="1" parent="1">
+          <mxGeometry x="20" y="68" width="960" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-browser" value="Browser" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3182CE;strokeWidth=1.5;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1A365D;" vertex="1" parent="1">
+          <mxGeometry x="400" y="84" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- APP ZONE -->
+        <mxCell id="c-app-zone" value="APPLICATION  —  App Service (Cloud Foundry)" style="text;html=1;strokeColor=#9AE6B4;fillColor=#F0FDF4;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#276749;" vertex="1" parent="1">
+          <mxGeometry x="20" y="163" width="960" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-app-service" value="App Service" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3182CE;strokeWidth=1.5;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1A365D;" vertex="1" parent="1">
+          <mxGeometry x="400" y="179" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- TIER 1 ZONE -->
+        <mxCell id="c-tier1-zone" value="TIER 1  —  Keyword and Question Search  (Azure AI Search)" style="text;html=1;strokeColor=#D6BCFA;fillColor=#FAF5FF;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#553C9A;" vertex="1" parent="1">
+          <mxGeometry x="20" y="258" width="960" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-suggester" value="Azure AI Search — Suggester API&#xa;~20–50 ms  ·  Handles keywords and natural-language questions" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#6B46C1;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#322659;" vertex="1" parent="1">
+          <mxGeometry x="325" y="274" width="350" height="53" as="geometry"/>
+        </mxCell>
+
+        <!-- DECISION -->
+        <mxCell id="c-decision" value="Results Meet Threshold?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEFCE8;strokeColor=#92400E;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#451A03;" vertex="1" parent="1">
+          <mxGeometry x="420" y="370" width="160" height="68" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-return-fast" value="Return Results" style="rounded=1;arcSize=10;fillColor=#F0FFF4;strokeColor=#276749;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontStyle=1;fontColor=#1C4532;" vertex="1" parent="1">
+          <mxGeometry x="700" y="379" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- TIER 2 ZONE -->
+        <mxCell id="c-tier2-zone" value="TIER 2  —  Semantic Fallback  (same Azure AI Search service, vector index)" style="text;html=1;strokeColor=#FBD38D;fillColor=#FFFBF0;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#744210;" vertex="1" parent="1">
+          <mxGeometry x="20" y="464" width="960" height="175" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-openai" value="Azure OpenAI — Generate Embedding&#xa;~100 ms" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#C05621;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#7B341E;" vertex="1" parent="1">
+          <mxGeometry x="325" y="484" width="350" height="53" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-ai-search-knn" value="Azure AI Search — Vector KNN&#xa;~150–200 ms total end-to-end" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#C05621;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#7B341E;" vertex="1" parent="1">
+          <mxGeometry x="325" y="567" width="350" height="53" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-return-slow" value="Return Results" style="rounded=1;arcSize=10;fillColor=#F0FFF4;strokeColor=#276749;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#1C4532;" vertex="1" parent="1">
+          <mxGeometry x="700" y="576" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- STATS BAR -->
+        <mxCell id="c-stats" value="Tier 1: ~20–50 ms  ·  Tier 2: ~150–200 ms  ·  Infrastructure: Azure AI Search  ·  Complexity: Medium  ·  Native Azure Integration" style="text;html=1;strokeColor=#E2E8F0;fillColor=#F7FAFC;align=center;verticalAlign=middle;rounded=1;arcSize=2;fontFamily=Helvetica;fontSize=11;fontColor=#4A5568;" vertex="1" parent="1">
+          <mxGeometry x="0" y="656" width="1000" height="46" as="geometry"/>
+        </mxCell>
+
+        <!-- EDGES -->
+        <mxCell id="c-e1" value="POST /suggestions  (300 ms debounce)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;fontFamily=Helvetica;fontSize=9;fontStyle=2;align=right;" edge="1" source="c-browser" target="c-app-service" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="c-app-service" target="c-suggester" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="c-suggester" target="c-decision" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-e4" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#276749;strokeWidth=2;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#276749;" edge="1" source="c-decision" target="c-return-fast" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-e5" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#C05621;strokeWidth=1.5;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#C05621;" edge="1" source="c-decision" target="c-openai" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="c-openai" target="c-ai-search-knn" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c-e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="c-ai-search-knn" target="c-return-slow" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <!-- ============================================================
+       Option D — Algolia (Not Recommended)
+       ============================================================ -->
+  <diagram name="D — Algolia" id="page-d">
+    <mxGraphModel dx="1150" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- TITLE -->
+        <mxCell id="d-title" value="Option D — Algolia  ·  Not Recommended" style="text;html=1;strokeColor=none;fillColor=#7B1D1D;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=17;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1000" height="58" as="geometry"/>
+        </mxCell>
+
+        <!-- GOVERNANCE CONSTRAINT BANNER -->
+        <mxCell id="d-blocker" value="Governance Constraint — Data Sovereignty&#xa;All query data and embedding generation occur inside Algolia infrastructure (third-party SaaS). No self-hosting option is available. Government use is not permitted under current data sovereignty requirements." style="text;html=1;strokeColor=#FC8181;fillColor=#FFF5F5;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=11;fontStyle=1;fontColor=#7B1D1D;" vertex="1" parent="1">
+          <mxGeometry x="20" y="68" width="960" height="68" as="geometry"/>
+        </mxCell>
+
+        <!-- CLIENT ZONE -->
+        <mxCell id="d-client-zone" value="CLIENT" style="text;html=1;strokeColor=#A0AEC0;fillColor=#F0F4F8;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#4A5568;" vertex="1" parent="1">
+          <mxGeometry x="20" y="148" width="960" height="83" as="geometry"/>
+        </mxCell>
+        <mxCell id="d-browser" value="Browser" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3182CE;strokeWidth=1.5;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1A365D;" vertex="1" parent="1">
+          <mxGeometry x="400" y="164" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- APP ZONE -->
+        <mxCell id="d-app-zone" value="APPLICATION  —  App Service (Cloud Foundry)" style="text;html=1;strokeColor=#9AE6B4;fillColor=#F0FDF4;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#276749;" vertex="1" parent="1">
+          <mxGeometry x="20" y="241" width="960" height="83" as="geometry"/>
+        </mxCell>
+        <mxCell id="d-app-service" value="App Service" style="rounded=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3182CE;strokeWidth=1.5;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1A365D;" vertex="1" parent="1">
+          <mxGeometry x="400" y="257" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- EXTERNAL SaaS ZONE -->
+        <mxCell id="d-saas-zone" value="EXTERNAL THIRD-PARTY SaaS  —  Outside Government Boundary  (single request — keyword and semantic handled internally)" style="text;html=1;strokeColor=#FC8181;fillColor=#FFF5F5;align=left;verticalAlign=top;rounded=1;arcSize=3;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#9B2335;" vertex="1" parent="1">
+          <mxGeometry x="20" y="334" width="960" height="133" as="geometry"/>
+        </mxCell>
+        <mxCell id="d-algolia" value="Algolia — Keyword and NeuralSearch (hybrid)&#xa;~5–10 ms  ·  Threshold and fallback logic handled internally by Algolia&#xa;Embeddings generated inside Algolia infrastructure" style="rounded=1;arcSize=10;fillColor=#FFF5F5;strokeColor=#9B2335;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#7B1D1D;" vertex="1" parent="1">
+          <mxGeometry x="250" y="354" width="500" height="88" as="geometry"/>
+        </mxCell>
+
+        <!-- RETURN -->
+        <mxCell id="d-return" value="Return Results" style="rounded=1;arcSize=10;fillColor=#F0FFF4;strokeColor=#276749;strokeWidth=1.5;fontFamily=Helvetica;fontSize=11;fontColor=#1C4532;" vertex="1" parent="1">
+          <mxGeometry x="400" y="496" width="200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- STATS BAR -->
+        <mxCell id="d-stats" value="Latency: ~5–10 ms (single request, all tiers internal)  ·  Infrastructure: Algolia SaaS (external)  ·  Governance Constraint: Data Sovereignty  ·  Status: Not Recommended" style="text;html=1;strokeColor=#FC8181;fillColor=#FFF5F5;align=center;verticalAlign=middle;rounded=1;arcSize=2;fontFamily=Helvetica;fontSize=11;fontColor=#7B1D1D;" vertex="1" parent="1">
+          <mxGeometry x="0" y="564" width="1000" height="46" as="geometry"/>
+        </mxCell>
+
+        <!-- EDGES -->
+        <mxCell id="d-e1" value="POST /suggestions  (300 ms debounce)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;fontFamily=Helvetica;fontSize=9;fontStyle=2;align=right;" edge="1" source="d-browser" target="d-app-service" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="d-e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="d-app-service" target="d-algolia" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="d-e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#4A5568;strokeWidth=1.5;" edge="1" source="d-algolia" target="d-return" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+</mxfile>
